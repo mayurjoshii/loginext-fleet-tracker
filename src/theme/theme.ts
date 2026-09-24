@@ -1,13 +1,35 @@
-import { createTheme } from '@mui/material/styles';
+import { createTheme } from "@mui/material/styles";
+
+declare module "@mui/material/styles" {
+  interface Palette {
+    vehicleStatus: {
+      enRoute: string;
+      idle: string;
+      delivered: string;
+    };
+  }
+  interface PaletteOptions {
+    vehicleStatus?: {
+      enRoute: string;
+      idle: string;
+      delivered: string;
+    };
+  }
+}
 
 export const theme = createTheme({
   palette: {
-    mode: 'light',
+    mode: "light",
     primary: {
-      main: '#1565c0',
+      main: "#1565c0",
     },
     secondary: {
-      main: '#2e7d32',
+      main: "#a9d0ab",
+    },
+    vehicleStatus: {
+      enRoute: "#1565c0",
+      idle: "#e8e8e8",
+      delivered: "#a3ffa8",
     },
   },
   shape: {

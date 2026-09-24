@@ -37,10 +37,10 @@ const STATUS_LABELS: Record<VehicleStatus, string> = {
   delivered: 'DELIVERED',
 };
 
-const STATUS_COLORS: Record<VehicleStatus, 'primary' | 'success' | 'default'> = {
-  en_route: 'primary',
-  idle: 'default',
-  delivered: 'success',
+const STATUS_PALETTE_KEY: Record<VehicleStatus, 'enRoute' | 'idle' | 'delivered'> = {
+  en_route: 'enRoute',
+  idle: 'idle',
+  delivered: 'delivered',
 };
 
 /**
@@ -98,7 +98,12 @@ function VehicleTable() {
                   <Chip
                     size="small"
                     label={STATUS_LABELS[vehicle.status]}
-                    color={STATUS_COLORS[vehicle.status]}
+                    sx={(theme) => ({
+                      bgcolor: theme.palette.vehicleStatus[STATUS_PALETTE_KEY[vehicle.status]],
+                      color: theme.palette.getContrastText(
+                        theme.palette.vehicleStatus[STATUS_PALETTE_KEY[vehicle.status]]
+                      ),
+                    })}
                   />
                 </TableCell>
                 <TableCell sx={{ whiteSpace: 'nowrap' }}>{formatSpeed(vehicle.speed)}</TableCell>
