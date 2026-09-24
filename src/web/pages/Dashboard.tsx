@@ -1,7 +1,10 @@
 import Box from '@mui/material/Box';
+import Divider from '@mui/material/Divider';
 import Paper from '@mui/material/Paper';
-import Typography from '@mui/material/Typography';
+import Stack from '@mui/material/Stack';
+import { FleetStatistics } from '../components/FleetStatistics';
 import { Header } from '../components/Header';
+import { StatusFilter } from '../components/StatusFilter';
 import { VehicleTable } from '../components/VehicleTable';
 
 /**
@@ -23,10 +26,11 @@ export const Dashboard = () => {
         }}
       >
         <Box sx={{ width: { xs: '100%', md: '20%' }, flexShrink: 0 }}>
-          <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
-            <Typography variant="body2" color="text.secondary">
-              Live status, status filter, and fleet statistics land here.
-            </Typography>
+          <Paper variant="outlined" sx={{ p: 2, height: '100%', overflowY: 'auto' }}>
+            <Stack spacing={2} divider={<Divider flexItem />}>
+              <StatusFilter />
+              <FleetStatistics />
+            </Stack>
           </Paper>
         </Box>
         <Box sx={{ flex: 1, minHeight: 0 }}>
