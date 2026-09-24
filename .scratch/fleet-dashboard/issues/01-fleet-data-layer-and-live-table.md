@@ -6,14 +6,14 @@
 
 **Status:** ready-for-agent
 
-- [ ] `Vehicle` type matches `/vehicles` and `/vehicles/:id` field-for-field (`id`, `vehicleNumber`, `driverName`, `driverPhone`, `status` restricted to `'en_route' | 'idle' | 'delivered'`, `destination`, `currentLocation: { lat, lng }`, `speed` in mph, `lastUpdated`, `estimatedArrival` (nullable), `batteryLevel`, `fuelLevel`)
-- [ ] `FleetStatistics` type matches `/statistics` exactly (`total`, `idle`, `en_route`, `delivered`, `average_speed`, `timestamp`)
-- [ ] A generic REST envelope type models `{ success, data, ... }` for every endpoint, with list endpoints additionally carrying `total` (and `status` on the filtered endpoint)
-- [ ] Path builders exist for `GET /vehicles`, `GET /vehicles/:id`, `GET /vehicles/status/:status`, and `GET /statistics`
-- [ ] Services for vehicles (`list`, `getById`, `listByStatus`) and statistics (`get`) unwrap the envelope's `data` and surface `success: false` as an error rather than passing the raw envelope to components
-- [ ] One shared context holds: `vehicles`, `statistics`, `statusFilter` + setter (setter triggers a REST refetch via `list`/`listByStatus`, not client-side filtering), `selectedVehicleId` + select/clear, and `loading`/`error` flags
-- [ ] A `useFleetSummary` hook derives `total`, `idle`, `enRoute`, `delivered`, `moving` (identical to `enRoute`), `averageSpeed`, and `lastUpdate` from the context's `vehicles`/`statistics`; on this ticket it's seeded from `GET /statistics` (no WebSocket-driven recomputation yet — that's ticket 04)
-- [ ] A static `Header` renders the page title, subtitle, and divider
-- [ ] The single-route page composes `Header` above a two-column body (left rail placeholder, ~80%-width table on the right) — no router introduced
-- [ ] `VehicleTable` renders every column listed above for the full fleet, with a fixed header/column-header row and independently scrolling body
-- [ ] Page-level integration test (RTL, with `vehicleService`/`statisticsService` mocked at the module boundary) confirms the table renders the mocked fleet's rows and columns correctly on initial load
+- [x] `Vehicle` type matches `/vehicles` and `/vehicles/:id` field-for-field (`id`, `vehicleNumber`, `driverName`, `driverPhone`, `status` restricted to `'en_route' | 'idle' | 'delivered'`, `destination`, `currentLocation: { lat, lng }`, `speed` in mph, `lastUpdated`, `estimatedArrival` (nullable), `batteryLevel`, `fuelLevel`)
+- [x] `FleetStatistics` type matches `/statistics` exactly (`total`, `idle`, `en_route`, `delivered`, `average_speed`, `timestamp`)
+- [x] A generic REST envelope type models `{ success, data, ... }` for every endpoint, with list endpoints additionally carrying `total` (and `status` on the filtered endpoint)
+- [x] Path builders exist for `GET /vehicles`, `GET /vehicles/:id`, `GET /vehicles/status/:status`, and `GET /statistics`
+- [x] Services for vehicles (`list`, `getById`, `listByStatus`) and statistics (`get`) unwrap the envelope's `data` and surface `success: false` as an error rather than passing the raw envelope to components
+- [x] One shared context holds: `vehicles`, `statistics`, `statusFilter` + setter (setter triggers a REST refetch via `list`/`listByStatus`, not client-side filtering), `selectedVehicleId` + select/clear, and `loading`/`error` flags
+- [x] A `useFleetSummary` hook derives `total`, `idle`, `enRoute`, `delivered`, `moving` (identical to `enRoute`), `averageSpeed`, and `lastUpdate` from the context's `vehicles`/`statistics`; on this ticket it's seeded from `GET /statistics` (no WebSocket-driven recomputation yet — that's ticket 04)
+- [x] A static `Header` renders the page title, subtitle, and divider
+- [x] The single-route page composes `Header` above a two-column body (left rail placeholder, ~80%-width table on the right) — no router introduced
+- [x] `VehicleTable` renders every column listed above for the full fleet, with a fixed header/column-header row and independently scrolling body
+- [x] Page-level integration test (RTL, with `vehicleService`/`statisticsService` mocked at the module boundary) confirms the table renders the mocked fleet's rows and columns correctly on initial load
