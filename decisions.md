@@ -66,3 +66,12 @@ from `plan.md` intact even though the current payload happens to be a full snaps
 this assumption is already safe under the merge-by-id implementation — no code change needed,
 just remove this note's uncertainty. If the backend team confirms the contract either way,
 update this decision accordingly.
+
+**Additional rationale — filter and re-render safety:** Merging by id rather than replacing the
+whole array also protects the UI state that sits on top of the list. The dashboard holds a
+`statusFilter` (and will gain more filters/selection state), so a full-array replace on every
+`vehicle_update` would swap out every `Vehicle` object identity at once — invalidating referential
+equality for all rows and forcing the entire table to re-render, even for vehicles whose data did
+not change. An id-keyed merge replaces only the objects that actually changed, leaving the
+identities of untouched rows stable so memoized rows stay mounted and the current filter/selection
+view isn't disturbed by a routine update tick.
