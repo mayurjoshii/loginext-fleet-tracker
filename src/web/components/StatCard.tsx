@@ -38,37 +38,35 @@ export const StatCard = ({ icon, label, value, badge, progress, fullWidth }: Sta
       variant="outlined"
       sx={{ p: 2, gridColumn: fullWidth ? '1 / -1' : undefined }}
     >
-      <Stack direction="row" spacing={1.5} sx={{ alignItems: 'flex-start' }}>
-        <Box sx={{ color: 'primary.main', display: 'flex', mt: 0.25 }}>{icon}</Box>
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography variant="body2" color="text.secondary">
-            {label}
-          </Typography>
-          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mt: 0.5 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700 }}>
-              {value}
-            </Typography>
-            {badge && (
-              <Chip
-                size="small"
-                label={badge.label}
-                sx={(theme) => ({
-                  bgcolor: badge.color,
-                  color: theme.palette.getContrastText(badge.color),
-                })}
-              />
-            )}
-          </Stack>
-          {progress && (
-            <LinearProgress
-              variant="determinate"
-              value={progress.value}
-              color={progress.color}
-              sx={{ mt: 1, height: 8, borderRadius: 4 }}
-            />
-          )}
-        </Box>
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+        <Box sx={{ color: 'primary.main', display: 'flex' }}>{icon}</Box>
+        <Typography variant="body2" color="text.secondary">
+          {label}
+        </Typography>
       </Stack>
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mt: 0.5 }}>
+        <Typography variant="h6" sx={{ fontWeight: 700 }}>
+          {value}
+        </Typography>
+        {badge && (
+          <Chip
+            size="small"
+            label={badge.label}
+            sx={(theme) => ({
+              bgcolor: badge.color,
+              color: theme.palette.getContrastText(badge.color),
+            })}
+          />
+        )}
+      </Stack>
+      {progress && (
+        <LinearProgress
+          variant="determinate"
+          value={progress.value}
+          color={progress.color}
+          sx={{ mt: 1, height: 8, borderRadius: 4 }}
+        />
+      )}
     </Paper>
   );
 };

@@ -169,7 +169,10 @@ export const VehicleDetailModal = () => {
               icon={<BatteryFullOutlinedIcon />}
               label="Battery Level"
               value={`${vehicle.batteryLevel}%`}
-              progress={{ value: vehicle.batteryLevel, color: severityForLevel(vehicle.batteryLevel) }}
+              progress={{
+                value: vehicle.batteryLevel,
+                color: severityForLevel(vehicle.batteryLevel),
+              }}
             />
             <StatCard
               icon={<LocalGasStationOutlinedIcon />}
@@ -181,7 +184,6 @@ export const VehicleDetailModal = () => {
               icon={<UpdateOutlinedIcon />}
               label="Last Updated"
               value={formatDateTime(vehicle.lastUpdated)}
-              fullWidth
             />
           </Box>
         )}
