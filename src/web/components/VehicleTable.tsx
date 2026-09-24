@@ -48,7 +48,7 @@ const STATUS_PALETTE_KEY: Record<VehicleStatus, 'enRoute' | 'idle' | 'delivered'
  * scrolling independently underneath.
  */
 export const VehicleTable = () => {
-  const { vehicles, loading, error } = useFleet();
+  const { vehicles, loading, error, selectVehicle } = useFleet();
 
   return (
     <Paper
@@ -89,7 +89,12 @@ export const VehicleTable = () => {
           </TableHead>
           <TableBody>
             {vehicles.map((vehicle) => (
-              <TableRow key={vehicle.id} hover>
+              <TableRow
+                key={vehicle.id}
+                hover
+                onClick={() => selectVehicle(vehicle.id)}
+                sx={{ cursor: 'pointer' }}
+              >
                 <TableCell sx={{ color: 'primary.main', fontWeight: 600 }}>
                   {vehicle.vehicleNumber}
                 </TableCell>

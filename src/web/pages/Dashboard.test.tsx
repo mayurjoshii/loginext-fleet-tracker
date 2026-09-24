@@ -65,6 +65,13 @@ const STATISTICS: FleetStatistics = {
 beforeEach(() => {
   jest.clearAllMocks();
   mockedVehicleService.list.mockResolvedValue(VEHICLES);
+  mockedVehicleService.getById.mockImplementation(async (id) => {
+    const vehicle = VEHICLES.find((candidate) => candidate.id === id);
+    if (!vehicle) {
+      throw new Error(`No vehicle ${id}`);
+    }
+    return vehicle;
+  });
   mockedStatisticsService.get.mockResolvedValue(STATISTICS);
 });
 
@@ -128,6 +135,58 @@ describe('Dashboard', () => {
   });
 });
 
+describe('VehicleDetailModal', () => {
+  it('opens with the selected vehicle fields on row click, and closes via the close button', async () => {
+    renderMain();
+
+    await userEvent.click(await screen.findByText('FL-001'));
+
+    expect(mockedVehicleService.getById).toHaveBeenCalledWith('v-1');
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByText('EN ROUTE')).toBeInTheDocument();
+    expect(within(dialog).getByText('62 mph')).toBeInTheDocument();
+    expect(within(dialog).getByText('John Smith')).toBeInTheDocument();
+    expect(within(dialog).getByText('+15096750557')).toBeInTheDocument();
+    expect(within(dialog).getByText('Hotel Downtown')).toBeInTheDocument();
+    expect(within(dialog).getByText('37.6779, -122.4754')).toBeInTheDocument();
+    expect(within(dialog).getByText('59%')).toBeInTheDocument();
+    expect(within(dialog).getByText('61%')).toBeInTheDocument();
+
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByText('Vehicles (2)')).toBeInTheDocument();
+  });
+
+  it('closes via a backdrop click', async () => {
+    renderMain();
+
+    await userEvent.click(await screen.findByText('FL-002'));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByText('DELIVERED')).toBeInTheDocument();
+
+    const backdrop = document.querySelector('.MuiBackdrop-root') as HTMLElement;
+    await userEvent.click(backdrop);
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('renders severity colors for battery/fuel progress bars at low and high levels', async () => {
+    mockedVehicleService.getById.mockResolvedValueOnce({
+      ...VEHICLES[0],
+      batteryLevel: 10,
+      fuelLevel: 90,
+    });
+    renderMain();
+
+    await userEvent.click(await screen.findByText('FL-001'));
+    const dialog = await screen.findByRole('dialog');
+
+    const progressBars = within(dialog).getAllByRole('progressbar');
+    expect(progressBars).toHaveLength(2);
+    const [batteryBar, fuelBar] = progressBars;
+    expect(batteryBar.className).toMatch(/colorError/);
+    expect(fuelBar.className).toMatch(/colorSuccess/);
 describe('Status filter and fleet statistics', () => {
   function statistics(): HTMLElement {
     return screen.getByRole('group', { name: 'Fleet statistics' });
