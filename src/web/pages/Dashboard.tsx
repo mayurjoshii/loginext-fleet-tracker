@@ -4,6 +4,7 @@ import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import { FleetStatistics } from '../components/FleetStatistics';
 import { Header } from '../components/Header';
+import { VehicleDetailModal } from '../components/VehicleDetailModal';
 import { StatusFilter } from '../components/StatusFilter';
 import { VehicleTable } from '../components/VehicleTable';
 
@@ -37,6 +38,7 @@ export const Dashboard = () => {
           <VehicleTable />
         </Box>
       </Box>
+      <VehicleDetailModal />
     </Box>
   );
 };
