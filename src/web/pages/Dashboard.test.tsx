@@ -151,14 +151,14 @@ describe('Status filter and fleet statistics', () => {
 
     await screen.findByText('Vehicles (2)');
 
-    const totalTile = within(statistics()).getByText('Total Fleet').closest('div') as HTMLElement;
+    const totalTile = screen.getByRole('group', { name: 'Total Fleet' });
     expect(within(totalTile).getByText('2')).toBeInTheDocument();
 
-    const avgSpeedTile = within(statistics()).getByText('Avg Speed').closest('div') as HTMLElement;
+    const avgSpeedTile = screen.getByRole('group', { name: 'Avg Speed' });
     expect(within(avgSpeedTile).getByText('31')).toBeInTheDocument();
 
     // "Moving" is by construction the En Route chip's count.
-    const movingTile = within(statistics()).getByText('Moving').closest('div') as HTMLElement;
+    const movingTile = screen.getByRole('group', { name: 'Moving' });
     expect(within(movingTile).getByText('1')).toBeInTheDocument();
 
     expect(within(statistics()).getByText('Last Update')).toBeInTheDocument();
@@ -180,9 +180,9 @@ describe('Status filter and fleet statistics', () => {
 
     // Counts describe the whole fleet, so filtering must not move them.
     expect(chipNames()).toEqual(['All (2)', 'Idle (0)', 'En Route (1)', 'Delivered (1)']);
-    const totalTile = within(statistics()).getByText('Total Fleet').closest('div') as HTMLElement;
+    const totalTile = screen.getByRole('group', { name: 'Total Fleet' });
     expect(within(totalTile).getByText('2')).toBeInTheDocument();
-    const movingTile = within(statistics()).getByText('Moving').closest('div') as HTMLElement;
+    const movingTile = screen.getByRole('group', { name: 'Moving' });
     expect(within(movingTile).getByText('1')).toBeInTheDocument();
 
     // Selecting "All" goes back to the unfiltered list endpoint.

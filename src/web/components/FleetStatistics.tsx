@@ -19,18 +19,29 @@ interface TileProps {
 
 const Tile = ({ icon: Icon, value, label }: TileProps) => {
   return (
-    <Paper variant="outlined" sx={{ p: 1.25, textAlign: 'center' }}>
-      <Icon fontSize="small" color="primary" />
+    <Paper role="group" aria-label={label} variant="outlined" sx={{ p: 1.25, textAlign: 'center' }}>
       <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
         {value}
       </Typography>
-      <Typography
-        variant="caption"
-        color="text.secondary"
-        sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}
+      <Stack
+        direction="row"
+        spacing={0.5}
+        sx={{ alignItems: 'center', justifyContent: 'center', mt: 0.25 }}
       >
-        {label}
-      </Typography>
+        <Icon sx={{ fontSize: 14 }} color="primary" />
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{
+            textTransform: 'uppercase',
+            letterSpacing: 0.3,
+            fontSize: 10,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {label}
+        </Typography>
+      </Stack>
     </Paper>
   );
 };
@@ -72,7 +83,10 @@ export const FleetStatistics = () => {
         />
       </Box>
 
-      <Paper variant="outlined" sx={{ mt: 1, px: 1, py: 0.75, bgcolor: 'action.hover' }}>
+      <Paper
+        variant="outlined"
+        sx={{ mt: 1, px: 1, py: 0.75, bgcolor: 'action.hover', textAlign: 'center' }}
+      >
         <Typography variant="caption" color="text.secondary">
           {`Updated ${formatAge(secondsSinceUpdate)} • Next update in ~3 minutes`}
         </Typography>
