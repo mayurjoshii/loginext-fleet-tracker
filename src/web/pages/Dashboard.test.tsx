@@ -1,4 +1,5 @@
 import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { ThemeProvider } from '@mui/material/styles';
 import { Main } from '../main';
 import { theme } from '../../theme/theme';
@@ -124,5 +125,89 @@ describe('Dashboard', () => {
     renderMain();
 
     expect(await screen.findByText('Vehicle service unavailable')).toBeInTheDocument();
+  });
+});
+
+describe('Status filter and fleet statistics', () => {
+  function statistics(): HTMLElement {
+    return screen.getByRole('group', { name: 'Fleet statistics' });
+  }
+
+  function chipNames(): string[] {
+    return within(screen.getByRole('group', { name: 'Filter by status' }))
+      .getAllByRole('button')
+      .map((chip) => chip.textContent ?? '');
+  }
+
+  it('renders a chip per status with fleet-wide counts', async () => {
+    renderMain();
+
+    await screen.findByText('Vehicles (2)');
+    expect(chipNames()).toEqual(['All (2)', 'Idle (0)', 'En Route (1)', 'Delivered (1)']);
+  });
+
+  it('renders the statistics tiles from the same summary as the chips', async () => {
+    renderMain();
+
+    await screen.findByText('Vehicles (2)');
+
+    const totalTile = within(statistics()).getByText('Total Fleet').closest('div') as HTMLElement;
+    expect(within(totalTile).getByText('2')).toBeInTheDocument();
+
+    const avgSpeedTile = within(statistics()).getByText('Avg Speed').closest('div') as HTMLElement;
+    expect(within(avgSpeedTile).getByText('31')).toBeInTheDocument();
+
+    // "Moving" is by construction the En Route chip's count.
+    const movingTile = within(statistics()).getByText('Moving').closest('div') as HTMLElement;
+    expect(within(movingTile).getByText('1')).toBeInTheDocument();
+
+    expect(within(statistics()).getByText('Last Update')).toBeInTheDocument();
+    expect(screen.getByText(/^Updated \d+s ago/)).toBeInTheDocument();
+  });
+
+  it('refetches by status on chip selection without changing the counts', async () => {
+    mockedVehicleService.listByStatus.mockResolvedValue([VEHICLES[1]]);
+
+    renderMain();
+    await screen.findByText('Vehicles (2)');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Delivered (1)' }));
+
+    expect(await screen.findByText('Vehicles (1)')).toBeInTheDocument();
+    expect(mockedVehicleService.listByStatus).toHaveBeenCalledWith('delivered');
+    expect(screen.getByText('FL-002')).toBeInTheDocument();
+    expect(screen.queryByText('FL-001')).not.toBeInTheDocument();
+
+    // Counts describe the whole fleet, so filtering must not move them.
+    expect(chipNames()).toEqual(['All (2)', 'Idle (0)', 'En Route (1)', 'Delivered (1)']);
+    const totalTile = within(statistics()).getByText('Total Fleet').closest('div') as HTMLElement;
+    expect(within(totalTile).getByText('2')).toBeInTheDocument();
+    const movingTile = within(statistics()).getByText('Moving').closest('div') as HTMLElement;
+    expect(within(movingTile).getByText('1')).toBeInTheDocument();
+
+    // Selecting "All" goes back to the unfiltered list endpoint.
+    await userEvent.click(screen.getByRole('button', { name: 'All (2)' }));
+    expect(await screen.findByText('Vehicles (2)')).toBeInTheDocument();
+    expect(mockedVehicleService.list).toHaveBeenCalledTimes(2);
+  });
+
+  it('marks the active chip as pressed', async () => {
+    mockedVehicleService.listByStatus.mockResolvedValue([]);
+
+    renderMain();
+    await screen.findByText('Vehicles (2)');
+
+    expect(screen.getByRole('button', { name: 'All (2)' })).toHaveAttribute('aria-pressed', 'true');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Idle (0)' }));
+
+    expect(screen.getByRole('button', { name: 'Idle (0)' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+    expect(screen.getByRole('button', { name: 'All (2)' })).toHaveAttribute(
+      'aria-pressed',
+      'false'
+    );
   });
 });
