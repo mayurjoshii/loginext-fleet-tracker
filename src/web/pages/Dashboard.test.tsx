@@ -187,6 +187,9 @@ describe('VehicleDetailModal', () => {
     const [batteryBar, fuelBar] = progressBars;
     expect(batteryBar.className).toMatch(/colorError/);
     expect(fuelBar.className).toMatch(/colorSuccess/);
+  });
+});
+
 describe('Status filter and fleet statistics', () => {
   function statistics(): HTMLElement {
     return screen.getByRole('group', { name: 'Fleet statistics' });
