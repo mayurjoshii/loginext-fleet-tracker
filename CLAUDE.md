@@ -31,6 +31,10 @@ Create React App (TypeScript template) frontend, no backend in this repo — see
 
 When adding a new domain resource, the expected pattern is: add a type in `src/types/`, add path builders in `src/api/endpoints.ts`, add a service in `src/api/services/`, then consume it from components — mirroring the existing `vehicleService`/`Vehicle` pair.
 
+## Git
+
+Never run `git commit` (or any command that creates/amends a commit) unless the user has explicitly approved it in that instance. Staging, diffing, and status checks are fine; committing is not.
+
 ## Agent skills
 
 ### Issue tracker
