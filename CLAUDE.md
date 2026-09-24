@@ -10,6 +10,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 There is no lint script; ESLint runs as part of `react-scripts` (config: `react-app` / `react-app/jest` in `package.json`).
 
+## Code style
+
+Always wrap `if`/`else` bodies in curly braces, even for single-line statements.
+
 ## Architecture
 
 Create React App (TypeScript template) frontend, no backend in this repo — see `decisions.md` for why CRA was chosen despite its deprecation. This is currently a scaffold: `src/App.tsx` renders a placeholder screen, but the supporting layers below are wired up and intended to be built on directly.

@@ -43,27 +43,31 @@ export function FleetProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
 
-    setLoading(true);
-    setError(null);
+    async function fetchVehicles() {
+      setLoading(true);
+      setError(null);
 
-    const request =
-      statusFilter === 'all'
-        ? vehicleService.list()
-        : vehicleService.listByStatus(statusFilter);
-
-    request
-      .then((next) => {
-        if (!cancelled) setVehicles(next);
-      })
-      .catch((err) => {
+      try {
+        const next =
+          statusFilter === 'all'
+            ? await vehicleService.list()
+            : await vehicleService.listByStatus(statusFilter);
+        if (!cancelled) {
+          setVehicles(next);
+        }
+      } catch (err) {
         if (!cancelled) {
           setVehicles([]);
           setError(messageOf(err));
         }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    fetchVehicles();
 
     return () => {
       cancelled = true;
@@ -74,14 +78,20 @@ export function FleetProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
 
-    statisticsService
-      .get()
-      .then((next) => {
-        if (!cancelled) setStatistics(next);
-      })
-      .catch((err) => {
-        if (!cancelled) setError((current) => current ?? messageOf(err));
-      });
+    async function fetchStatistics() {
+      try {
+        const next = await statisticsService.get();
+        if (!cancelled) {
+          setStatistics(next);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError((current) => current ?? messageOf(err));
+        }
+      }
+    }
+
+    fetchStatistics();
 
     return () => {
       cancelled = true;
