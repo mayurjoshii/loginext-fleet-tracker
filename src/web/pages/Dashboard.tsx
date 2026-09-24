@@ -2,6 +2,7 @@ import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import { Header } from '../components/Header';
+import { VehicleDetailModal } from '../components/VehicleDetailModal';
 import { VehicleTable } from '../components/VehicleTable';
 
 /**
@@ -33,6 +34,7 @@ export const Dashboard = () => {
           <VehicleTable />
         </Box>
       </Box>
+      <VehicleDetailModal />
     </Box>
   );
 };
