@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import IconButton from '@mui/material/IconButton';
 import Modal from '@mui/material/Modal';
@@ -10,6 +11,7 @@ import Typography from '@mui/material/Typography';
 import { useTheme } from '@mui/material/styles';
 import BatteryFullOutlinedIcon from '@mui/icons-material/BatteryFullOutlined';
 import CloseIcon from '@mui/icons-material/Close';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import LocalGasStationOutlinedIcon from '@mui/icons-material/LocalGasStationOutlined';
 import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutlineOutlined';
@@ -45,13 +47,34 @@ function messageOf(err: unknown): string {
  * backdrop. Closes via its close button or by clicking the backdrop.
  */
 export const VehicleDetailModal = () => {
-  const { selectedVehicleId, clearSelectedVehicle } = useFleet();
+  const { selectedVehicleId, clearSelectedVehicle, vehicles } = useFleet();
   const theme = useTheme();
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  // Kept apart from `error`: a failed *refresh* must leave the data already on
+  // screen in place, where a failed initial load has nothing to show instead.
+  const [refreshError, setRefreshError] = useState<string | null>(null);
 
   const open = selectedVehicleId !== null;
+
+  /**
+   * Whether a socket push has carried newer data for this vehicle than the
+   * snapshot on screen.
+   *
+   * The socket is only a *signal* here — it never supplies the modal's values.
+   * REST stays the sole source of truth for single-vehicle detail, so noticing
+   * staleness and resolving it are deliberately separate steps, and the second
+   * one is the dispatcher's to take.
+   *
+   * ISO-8601 timestamps compare correctly as strings, the same assumption
+   * `useFleetSummary` already relies on.
+   */
+  const liveVehicle = vehicles.find((candidate) => candidate.id === selectedVehicleId);
+  const isStale = Boolean(
+    vehicle && liveVehicle && liveVehicle.lastUpdated > vehicle.lastUpdated
+  );
 
   useEffect(() => {
     if (!selectedVehicleId) {
@@ -61,6 +84,7 @@ export const VehicleDetailModal = () => {
     let cancelled = false;
     setVehicle(null);
     setError(null);
+    setRefreshError(null);
     setLoading(true);
 
     vehicleService
@@ -84,6 +108,31 @@ export const VehicleDetailModal = () => {
     return () => {
       cancelled = true;
     };
+  }, [selectedVehicleId]);
+
+  /**
+   * Pulls a fresh snapshot on demand, via the same `getById` the modal opened
+   * with. Deliberately does not blank the existing values while in flight —
+   * the dispatcher asked for newer data, not for the panel to empty itself.
+   */
+  const handleRefresh = useCallback(async () => {
+    const id = selectedVehicleId;
+    if (!id) {
+      return;
+    }
+
+    setRefreshing(true);
+    setRefreshError(null);
+
+    try {
+      const next = await vehicleService.getById(id);
+      // The selection may have moved on while this was in flight.
+      setVehicle((current) => (current && current.id === id ? next : current));
+    } catch (err) {
+      setRefreshError(messageOf(err));
+    } finally {
+      setRefreshing(false);
+    }
   }, [selectedVehicleId]);
 
   return (
@@ -126,6 +175,34 @@ export const VehicleDetailModal = () => {
         )}
 
         {error && <Alert severity="error">{error}</Alert>}
+
+        {isStale && (
+          <Alert
+            severity="warning"
+            sx={{ mb: 2 }}
+            action={
+              <Button
+                size="small"
+                color="inherit"
+                onClick={handleRefresh}
+                disabled={refreshing}
+                startIcon={
+                  refreshing ? <CircularProgress size={14} color="inherit" /> : <RefreshIcon />
+                }
+              >
+                Refresh
+              </Button>
+            }
+          >
+            Newer data has arrived for this vehicle.
+          </Alert>
+        )}
+
+        {refreshError && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {`Couldn't refresh: ${refreshError}`}
+          </Alert>
+        )}
 
         {vehicle && !loading && !error && (
           <Box
