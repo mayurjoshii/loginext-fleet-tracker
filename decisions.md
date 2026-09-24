@@ -31,3 +31,38 @@ the project. This is a deliberate, temporary shortcut — not the intended long-
 **Follow-up:** Once the app expands beyond one screen, split `main.tsx` into routed `page`
 components under `src/web/pages/` (one component per route) and introduce a router. The
 `src/web/pages/` folder already exists as a placeholder for that future split.
+
+## 2026-09-24 — WebSocket `vehicle_update` assumed to always carry the full fleet array
+
+Probed the live WebSocket at `REACT_APP_WS_URL` directly (no message shape was documented in
+`src/api-types-responses.md`). Captured two message types:
+
+```ts
+{
+  type: 'initial_data' | 'vehicle_update',
+  data: Vehicle[],
+  timestamp: string,
+  message: string,
+}
+```
+
+Both `initial_data` (sent once on connect) and `vehicle_update` (sent ~every 3 minutes per the
+server's own `message` text) carried the **entire 25-vehicle fleet**, not a single-vehicle delta
+or a subset of changed vehicles.
+
+**Context:** Only one connection/update cycle was observed. There's no guarantee the backend
+will always send the full fleet on every `vehicle_update` — it could plausibly send only the
+vehicles that changed in a given cycle (e.g. 10 of 25), and a client that blindly replaces its
+vehicle list with `data` would silently drop the other 15 vehicles from the UI.
+
+**Decision:** Assume `vehicle_update.data` is the full fleet array for now (matches the one
+sample observed), but implement `applyVehicleUpdate` as an **id-keyed merge into the existing
+list**, not a full-array replace — this is correct whether the payload is the full 25 or a
+partial subset, and only REST is allowed to add/remove vehicles from the list (WS never grows or
+shrinks it). This keeps the "REST is source of truth for snapshots, WS is deltas only" boundary
+from `plan.md` intact even though the current payload happens to be a full snapshot.
+
+**Follow-up:** If a future observation shows `vehicle_update` consistently sends partial arrays,
+this assumption is already safe under the merge-by-id implementation — no code change needed,
+just remove this note's uncertainty. If the backend team confirms the contract either way,
+update this decision accordingly.
