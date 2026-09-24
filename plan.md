@@ -205,31 +205,76 @@ components (list, selected vehicle, filter, socket status):
 - Everything else (table sort, hover state, modal open/close animation) stays local component
   state — no need to put it in context.
 
-### 5. Components — `src/web/components/`
+### 5. `useFleetSummary` hook — `src/context/useFleetSummary.ts`
 
-Mirror the visual sections 1:1:
+Per `frontend-design.md`, the left-rail filter chip counts and the fleet-statistics tiles must
+never disagree and must update the instant a WS `vehicle_update` merge lands — not just on the
+next REST fetch. Rather than `StatusFilter` and `FleetStatistics` each computing their own
+counts, one hook derives everything from `FleetContext.vehicles` (the same array WS deltas are
+merged into per step 4):
 
-- `Header.tsx` — truck icon (from `@mui/icons-material`) + "Fleet Tracking Dashboard" title.
-- `LiveStatusIndicator.tsx` — reads socket `status` from `useSocket`/context, shows
-  "Updates are live" vs. reconnecting/offline state.
-- `StatusFilter.tsx` — filter chips/buttons (`all`, `en_route`, `idle`, `delivered`) bound to
-  `statusFilter` in context.
-- `FleetStatistics.tsx` — 4 cards reading `statistics` from context: Total, Idle, En Route,
-  Delivered (or Total / Active (`en_route`) / Idle / Delivered, whichever 4-card grouping the
-  design calls for — `average_speed` is a 5th data point available if a card is needed for it).
-- `VehicleTable.tsx` — columns: Vehicle (`vehicleNumber`), Driver (`driverName`), Status, Speed
-  (`speed`, render as `${speed} mph`), Destination, ETA (`estimatedArrival`, render "—" when
-  `null`), Last Update (`lastUpdated`), Location (`currentLocation.lat`/`.lng`, via
-  `src/utils/format.ts`); row click → `selectVehicle(id)`.
-- `VehicleDetailModal.tsx` — MUI `Modal`/`Dialog` with backdrop blur, opens when
-  `selectedVehicleId` is set; fetches full detail via `vehicleService.getById` (list item already
-  carries every field the detail response has, so this is mainly to get the freshest snapshot on
-  open, not to fill in missing fields); content broken into cards — e.g. driver
-  (`driverName`/`driverPhone`), status/destination/ETA, location, and battery/fuel level
-  (`batteryLevel`/`fuelLevel` are only in the payload, not the table — the modal is where they
-  surface).
+```ts
+function useFleetSummary() {
+  const { vehicles, statistics } = useFleetContext();
+  return useMemo(() => ({
+    total: vehicles.length,
+    idle: vehicles.filter(v => v.status === 'idle').length,
+    enRoute: vehicles.filter(v => v.status === 'en_route').length,
+    delivered: vehicles.filter(v => v.status === 'delivered').length,
+    moving: vehicles.filter(v => v.status === 'en_route').length, // "Moving" IS en_route, not a separate dimension
+    averageSpeed: statistics?.average_speed ?? null, // GET /statistics seeds this; not cheaply re-derivable without every vehicle's speed already in `vehicles`, which it is — see note below
+    lastUpdate: vehicles.reduce((max, v) => (v.lastUpdated > max ? v.lastUpdated : max), ''),
+  }), [vehicles, statistics]);
+}
+```
 
-### 6. Layout — `src/web/pages/Dashboard.tsx` (or keep in `main.tsx`)
+`GET /statistics` (step 3) seeds `total`/`idle`/`en_route`/`delivered`/`average_speed` on initial
+render; once WS updates start arriving, `StatusFilter.tsx` and `FleetStatistics.tsx` should
+prefer these client-derived counts over waiting on a fresh `/statistics` call — this is what
+keeps the two sections and the table in lockstep off one source of truth. `averageSpeed` can
+also be derived from `vehicles` client-side (`mean(v.speed)`) if a WS-fresh value is ever needed
+instead of the REST-seeded one.
+
+### 6. Components — `src/web/components/`
+
+Mirror the visual sections 1:1 (see `frontend-design.md` for the annotated screenshots this
+maps to):
+
+- `Header.tsx` — truck icon (from `@mui/icons-material`) + **"Fleet Tracking Dashboard"** title,
+  muted subtitle (`Real-time vehicle monitoring • LogiNext Case Study`), full-width divider
+  underneath. Purely static — no props, no context, no data dependency at all.
+- `LiveStatusIndicator.tsx` — reads socket `status` from `useSocket`/context: green wifi icon +
+  "Live Updates Active" when connected; needs its own gray/red wifi-off variant + copy (e.g.
+  "Reconnecting…" / "Offline") for the other `ConnectionStatus` values, which the screenshot
+  doesn't show.
+- `StatusFilter.tsx` — 2×2 grid of filter chips (`All`/`Idle`/`En Route`/`Delivered`), each with
+  a status-colored dot + label + count from `useFleetSummary()` (gray/blue/green dots matching
+  the table's status badge colors). Bound to `statusFilter` in context; selecting a chip triggers
+  a REST refetch (`listByStatus`/`list`) for the table rows — the chip *counts* always come from
+  `useFleetSummary()` regardless of which filter is active, so switching filters never makes a
+  count disappear.
+- `FleetStatistics.tsx` — 2×2 grid of stat tiles (Total Fleet, Avg Speed, Moving, Last Update),
+  all from `useFleetSummary()`; plus a footer line ("Updated Xs ago • Next update in ~3 minutes")
+  driven by a local client-side timer anchored to the last time `useFleetSummary()`'s output
+  changed — not an API value.
+- `StatCard.tsx` — one reusable, prop-driven presentational card (icon + label + value, optional
+  `Chip` badge or `LinearProgress` bar) used 9× inside `VehicleDetailModal`. Purely presentational
+  — takes `icon`, `label`, `value`/`children` props, no context/data-fetching of its own.
+- `VehicleTable.tsx` — header row (`Vehicles (N)` + green "Live" pill) above a column-header row
+  that stays fixed while the body scrolls independently. Columns: Vehicle (`vehicleNumber`, as a
+  link), Driver (`driverName`), Status (color-coded badge), Speed (`${speed} mph`), Destination,
+  ETA (`estimatedArrival`, "-" when `null`), Last Update (`lastUpdated`, formatted
+  `DD/MM/YYYY, HH:mm:ss`), Location (`lat, lng` to 4 decimals) — all via `src/utils/format.ts`;
+  row click → `selectVehicle(id)`.
+- `VehicleDetailModal.tsx` — MUI `Dialog` with backdrop blur, opens when `selectedVehicleId` is
+  set; fetches full detail via `vehicleService.getById` (list item already carries every field
+  shown, so this is mainly to get the freshest snapshot on open). Structure: header (truck icon +
+  `vehicleNumber` title + close `IconButton` + driver/status subtitle) → divider → 2-column grid
+  of `StatCard`s (Status badge, Current Speed, Driver, Phone, Destination, Location-in-monospace,
+  Battery % + progress bar, Fuel % + progress bar) → one full-width `StatCard` for Last Updated.
+  `estimatedArrival` isn't in the screenshot; leave it out of the card grid for Phase 1.
+
+### 7. Layout — `src/web/pages/Dashboard.tsx` (or keep in `main.tsx`)
 
 Per `decisions.md`, the app is intentionally single-route for now — no router needed. Compose:
 
@@ -250,9 +295,10 @@ Per `decisions.md`, the app is intentionally single-route for now — no router 
 </FleetProvider>
 ```
 
-Use MUI `Grid`/`Box` with the existing `src/theme/theme.ts`; no new styling system.
+Use MUI `Grid`/`Box` with the existing `src/theme/theme.ts`; no new styling system. This is the
+merge point every parallel component track below lands in — see "Suggested build order."
 
-### 7. `.env`
+### 8. `.env`
 
 Add real values to a local `.env` (untracked) from `.env.example`:
 ```
@@ -284,11 +330,47 @@ REACT_APP_WS_URL=<ws url — to be provided>
 
 ## Suggested build order
 
-1. Types + endpoints + services (steps 1–3).
-2. `FleetContext` wired to REST only, no socket yet — confirm data flows into a bare-bones table.
-3. `VehicleTable` + `FleetStatistics` + `StatusFilter` against static/mock data if the API isn't
-   reachable yet.
-4. `VehicleDetailModal`.
-5. Wire `useSocket` into `FleetContext` for live updates + `LiveStatusIndicator`.
-6. Header + final layout/spacing pass.
-7. Manual test against real API/WS, then revisit the open questions above.
+### Critical path (sequential, blocking — do this first)
+
+Everything else depends on the **shapes** these produce, not their full correctness against the
+live API — so the goal here is to lock interfaces fast, not to gold-plate:
+
+1. Types (`Vehicle`, `VehicleStatus`, `ApiResponse`, `FleetStatistics` — step 1).
+2. Endpoints + services (steps 2–3).
+3. `FleetContext`'s **public shape** (step 4): `vehicles`, `statistics`, `statusFilter` +
+   `setStatusFilter`, `selectedVehicleId` + `selectVehicle`/`clearSelection`, `loading`/`error`.
+   Wire it to REST first; the WS merge logic can be filled in later without changing this shape
+   (see below).
+4. `useFleetSummary()`'s return shape (step 5): `{ total, idle, enRoute, delivered, moving,
+   averageSpeed, lastUpdate }`. Can initially return REST-only numbers (from `statistics`)
+   before the WS-driven derivation is wired in — same reasoning as #3.
+
+Once these four interfaces are agreed (roughly: `Vehicle`/`FleetStatistics` fields +
+`FleetContext`/`useFleetSummary` return shapes), everything below can fan out.
+
+### Parallel tracks — build independently, merge into `Dashboard.tsx`
+
+These don't depend on each other, only on the interfaces above, and can be built and reviewed as
+separate PRs/branches by different people (or agents) at the same time:
+
+| Track | Component(s) | Depends on |
+|---|---|---|
+| A | `Header.tsx` | Nothing — pure static markup, can start before step 1 even lands |
+| B | `LiveStatusIndicator.tsx` | `useSocket`'s `ConnectionStatus` type only |
+| C | `StatCard.tsx` + `VehicleDetailModal.tsx` | `Vehicle` type, `vehicleService.getById`; not `FleetContext` beyond `selectedVehicleId`/`selectVehicle` |
+| D | `StatusFilter.tsx` + `FleetStatistics.tsx` | `useFleetSummary()` shape + `statusFilter`/`setStatusFilter` (build both together — they share the one hook and are meant to never drift apart, per `frontend-design.md`) |
+| E | `VehicleTable.tsx` | `FleetContext.vehicles` + `selectVehicle` |
+| F | WS merge-by-id logic *inside* `FleetContext` (the `applyVehicleUpdate` behavior from step 4) | Only the `FleetContext` internals — no UI component reads the socket directly, they all just re-render off `vehicles` changing, so this can be developed and tested in isolation (e.g. against a mocked `WebSocket`) fully in parallel with tracks A–E |
+
+Each track can use hand-mocked data (a static `Vehicle[]` fixture, a stubbed
+`useFleetContext()`/`useFleetSummary()`) to build and visually verify against
+`frontend-design.md` without waiting on a working backend connection.
+
+### Merge + integration (sequential again)
+
+1. Wire tracks A–E into `Dashboard.tsx` (step 7) behind the real `FleetProvider` — this is the
+   one point where every track's interface assumptions get checked against each other.
+2. Drop in track F (WS merge logic) — since it only changes `FleetContext` internals, this step
+   should require no changes to any component from tracks A–E.
+3. Add real `.env` values (step 8) and manually test against the live API/WS.
+4. Revisit the one open question above (pagination) once real fleet sizes are known.

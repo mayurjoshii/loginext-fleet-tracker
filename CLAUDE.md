@@ -24,3 +24,13 @@ Create React App (TypeScript template) frontend, no backend in this repo — see
 - `src/utils/` — small stateless helpers: `format.ts` (date/coordinate formatting), `storage.ts` (typed JSON wrapper over `localStorage`).
 
 When adding a new domain resource, the expected pattern is: add a type in `src/types/`, add path builders in `src/api/endpoints.ts`, add a service in `src/api/services/`, then consume it from components — mirroring the existing `vehicleService`/`Vehicle` pair.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live as local markdown files under `.scratch/<feature>/`. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
