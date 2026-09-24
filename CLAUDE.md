@@ -14,6 +14,8 @@ There is no lint script; ESLint runs as part of `react-scripts` (config: `react-
 
 Always wrap `if`/`else` bodies in curly braces, even for single-line statements.
 
+Function components use named exports, not default exports — declare as `export const ComponentName = () => { ... }` rather than `function ComponentName() { ... }` / `export default ComponentName`.
+
 ## Architecture
 
 Create React App (TypeScript template) frontend, no backend in this repo — see `decisions.md` for why CRA was chosen despite its deprecation. This is currently a scaffold: `src/App.tsx` renders a placeholder screen, but the supporting layers below are wired up and intended to be built on directly.

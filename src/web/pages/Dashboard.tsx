@@ -1,15 +1,15 @@
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
-import Header from '../components/Header';
-import VehicleTable from '../components/VehicleTable';
+import { Header } from '../components/Header';
+import { VehicleTable } from '../components/VehicleTable';
 
 /**
  * The app's single route: header above a two-column body — a left rail
  * (live status, filter, statistics; filled in by later tickets) beside the
  * fleet table.
  */
-function Dashboard() {
+export const Dashboard = () => {
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', p: 3, gap: 2 }}>
       <Header />
@@ -35,6 +35,4 @@ function Dashboard() {
       </Box>
     </Box>
   );
-}
-
-export default Dashboard;
+};

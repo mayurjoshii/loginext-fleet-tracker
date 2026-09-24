@@ -47,7 +47,7 @@ const STATUS_PALETTE_KEY: Record<VehicleStatus, 'enRoute' | 'idle' | 'delivered'
  * The fleet table: a fixed title row and column headers, with the body
  * scrolling independently underneath.
  */
-function VehicleTable() {
+export const VehicleTable = () => {
   const { vehicles, loading, error } = useFleet();
 
   return (
@@ -136,6 +136,4 @@ function VehicleTable() {
       </TableContainer>
     </Paper>
   );
-}
-
-export default VehicleTable;
+};

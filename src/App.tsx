@@ -1,7 +1,5 @@
-import Main from './web/main';
+import { Main } from './web/main';
 
-function App() {
+export const App = () => {
   return <Main />;
-}
-
-export default App;
+};

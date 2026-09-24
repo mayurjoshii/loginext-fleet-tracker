@@ -5,7 +5,7 @@ import Typography from '@mui/material/Typography';
 import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined';
 
 /** Static page header — title, subtitle, and the divider under them. */
-function Header() {
+export const Header = () => {
   return (
     <Box component="header" sx={{ pb: 2 }}>
       <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
@@ -20,6 +20,4 @@ function Header() {
       <Divider sx={{ mt: 2 }} />
     </Box>
   );
-}
-
-export default Header;
+};

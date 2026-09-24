@@ -1,9 +1,19 @@
 import { render, screen, within } from '@testing-library/react';
-import Main from '../main';
+import { ThemeProvider } from '@mui/material/styles';
+import { Main } from '../main';
+import { theme } from '../../theme/theme';
 import { vehicleService } from '../../api/services/vehicleService';
 import { statisticsService } from '../../api/services/statisticsService';
 import type { Vehicle } from '../../types/vehicle';
 import type { FleetStatistics } from '../../types/statistics';
+
+function renderMain() {
+  return render(
+    <ThemeProvider theme={theme}>
+      <Main />
+    </ThemeProvider>
+  );
+}
 
 jest.mock('../../api/services/vehicleService');
 jest.mock('../../api/services/statisticsService');
@@ -59,7 +69,7 @@ beforeEach(() => {
 
 describe('Dashboard', () => {
   it('renders the header', async () => {
-    render(<Main />);
+    renderMain();
 
     expect(
       await screen.findByRole('heading', { name: 'Fleet Tracking Dashboard' })
@@ -70,7 +80,7 @@ describe('Dashboard', () => {
   });
 
   it('loads the fleet over REST and lists every column header', async () => {
-    render(<Main />);
+    renderMain();
 
     expect(await screen.findByText('Vehicles (2)')).toBeInTheDocument();
     expect(mockedVehicleService.list).toHaveBeenCalledTimes(1);
@@ -89,7 +99,7 @@ describe('Dashboard', () => {
   });
 
   it('renders a row per vehicle with every field formatted', async () => {
-    render(<Main />);
+    renderMain();
 
     const enRouteRow = (await screen.findByText('FL-001')).closest('tr') as HTMLElement;
     expect(within(enRouteRow).getByText('John Smith')).toBeInTheDocument();
@@ -111,7 +121,7 @@ describe('Dashboard', () => {
   it('surfaces a failed fleet load as an error instead of an empty table', async () => {
     mockedVehicleService.list.mockRejectedValue(new Error('Vehicle service unavailable'));
 
-    render(<Main />);
+    renderMain();
 
     expect(await screen.findByText('Vehicle service unavailable')).toBeInTheDocument();
   });
