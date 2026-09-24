@@ -15,6 +15,14 @@ export function formatOptionalDateTime(iso: string | null | undefined): string {
   return iso ? formatDateTime(iso) : '—';
 }
 
+/** Formats an ISO timestamp as `HH:mm` — the time portion only. */
+export function formatTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export function formatCoordinates(lat: number, lng: number, fractionDigits = 4): string {
   return `${lat.toFixed(fractionDigits)}, ${lng.toFixed(fractionDigits)}`;
 }

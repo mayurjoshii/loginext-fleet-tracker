@@ -4,11 +4,11 @@
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] `StatusFilter` renders a chip per status (`All`/`Idle`/`En Route`/`Delivered`) with a status-colored dot, label, and count sourced from `useFleetSummary` — counts never change when a different chip is selected
-- [ ] Selecting a chip updates `statusFilter` in context, triggering the appropriate REST refetch (`list` for "All", `listByStatus` otherwise) and updating the visible table rows
-- [ ] The currently active chip is visually distinguished from the others
-- [ ] `FleetStatistics` renders total fleet size, average speed, moving count (equal to the `en_route` count), and last-update time, all from `useFleetSummary`
-- [ ] A freshness line ("Updated Xs ago") ticks locally off a timer anchored to the last time `useFleetSummary`'s output changed — not a value read from an API response
-- [ ] Page-level integration test confirms: selecting a filter chip changes the visible table rows and triggers the expected service call; chip counts and statistics-panel numbers match each other and stay stable across filter changes
+- [x] `StatusFilter` renders a chip per status (`All`/`Idle`/`En Route`/`Delivered`) with a status-colored dot, label, and count sourced from `useFleetSummary` — counts never change when a different chip is selected
+- [x] Selecting a chip updates `statusFilter` in context, triggering the appropriate REST refetch (`list` for "All", `listByStatus` otherwise) and updating the visible table rows
+- [x] The currently active chip is visually distinguished from the others
+- [x] `FleetStatistics` renders total fleet size, average speed, moving count (equal to the `en_route` count), and last-update time, all from `useFleetSummary`
+- [x] A freshness line ("Updated Xs ago") ticks locally off a timer anchored to the last time `useFleetSummary`'s output changed — not a value read from an API response
+- [x] Page-level integration test confirms: selecting a filter chip changes the visible table rows and triggers the expected service call; chip counts and statistics-panel numbers match each other and stay stable across filter changes
