@@ -4,14 +4,14 @@ import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import { FleetStatistics } from '../components/FleetStatistics';
 import { Header } from '../components/Header';
+import { LiveStatusIndicator } from '../components/LiveStatusIndicator';
 import { VehicleDetailModal } from '../components/VehicleDetailModal';
 import { StatusFilter } from '../components/StatusFilter';
 import { VehicleTable } from '../components/VehicleTable';
 
 /**
  * The app's single route: header above a two-column body — a left rail
- * (live status, filter, statistics; filled in by later tickets) beside the
- * fleet table.
+ * (live status, filter, statistics) beside the fleet table.
  */
 export const Dashboard = () => {
   return (
@@ -29,6 +29,7 @@ export const Dashboard = () => {
         <Box sx={{ width: { xs: '100%', md: '20%' }, flexShrink: 0 }}>
           <Paper variant="outlined" sx={{ p: 2, height: '100%', overflowY: 'auto' }}>
             <Stack spacing={2} divider={<Divider flexItem />}>
+              <LiveStatusIndicator />
               <StatusFilter />
               <FleetStatistics />
             </Stack>

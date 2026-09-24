@@ -4,13 +4,16 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
 import { vehicleService } from '../api/services/vehicleService';
 import { statisticsService } from '../api/services/statisticsService';
+import { socketManager, type ConnectionStatus } from '../sockets/SocketManager';
 import type { FleetStatistics } from '../types/statistics';
 import type { StatusFilter, Vehicle } from '../types/vehicle';
+import { deriveStatistics, mergeVehiclesById, parseFleetMessage } from './mergeVehicles';
 
 export interface FleetContextValue {
   vehicles: Vehicle[];
@@ -23,6 +26,8 @@ export interface FleetContextValue {
   clearSelectedVehicle: () => void;
   loading: boolean;
   error: string | null;
+  /** Live state of the WebSocket feeding `vehicle_update` pushes. */
+  connectionStatus: ConnectionStatus;
 }
 
 const FleetContext = createContext<FleetContextValue | undefined>(undefined);
@@ -38,6 +43,11 @@ export function FleetProvider({ children }: { children: ReactNode }) {
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('closed');
+
+  // Once a push has recomputed statistics, a late-arriving `/statistics`
+  // response is stale and must not clobber it.
+  const pushedRef = useRef(false);
 
   // The fleet list is refetched from REST whenever the status filter changes.
   useEffect(() => {
@@ -74,14 +84,15 @@ export function FleetProvider({ children }: { children: ReactNode }) {
     };
   }, [statusFilter]);
 
-  // Statistics seed the fleet summary on first render.
+  // Statistics seed the fleet summary on first render; after that the socket
+  // keeps them current, so this runs exactly once.
   useEffect(() => {
     let cancelled = false;
 
     async function fetchStatistics() {
       try {
         const next = await statisticsService.get();
-        if (!cancelled) {
+        if (!cancelled && !pushedRef.current) {
           setStatistics(next);
         }
       } catch (err) {
@@ -95,6 +106,36 @@ export function FleetProvider({ children }: { children: ReactNode }) {
 
     return () => {
       cancelled = true;
+    };
+  }, []);
+
+  /**
+   * WebSocket deltas are layered on top of whatever REST last loaded.
+   * `initial_data` is ignored outright — REST owns the initial load — and
+   * `vehicle_update` is merged by id so a push can never add or remove rows
+   * from the dispatcher's current (possibly filtered) view.
+   */
+  useEffect(() => {
+    const unsubscribeStatus = socketManager.onStatusChange(setConnectionStatus);
+    const unsubscribeMessage = socketManager.onMessage((raw) => {
+      const message = parseFleetMessage(raw);
+      if (!message || message.type !== 'vehicle_update') {
+        return;
+      }
+
+      pushedRef.current = true;
+      setVehicles((current) => mergeVehiclesById(current, message.data));
+      // The push carries the whole fleet, so the fleet-wide counts and average
+      // are exact here — no follow-up `/statistics` call needed.
+      setStatistics(deriveStatistics(message.data, message.timestamp));
+    });
+
+    socketManager.connect();
+
+    return () => {
+      unsubscribeStatus();
+      unsubscribeMessage();
+      socketManager.disconnect();
     };
   }, []);
 
@@ -112,6 +153,7 @@ export function FleetProvider({ children }: { children: ReactNode }) {
       clearSelectedVehicle,
       loading,
       error,
+      connectionStatus,
     }),
     [
       vehicles,
@@ -122,6 +164,7 @@ export function FleetProvider({ children }: { children: ReactNode }) {
       clearSelectedVehicle,
       loading,
       error,
+      connectionStatus,
     ]
   );
 
