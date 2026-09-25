@@ -85,7 +85,7 @@ export const FleetStatistics = () => {
 
       <Paper
         variant="outlined"
-        sx={{ mt: 1, px: 1, py: 0.75, bgcolor: 'action.hover', textAlign: 'center' }}
+        sx={{ mt: 1, px: 1, py: 0.75, bgcolor: 'action.hover', textAlign: 'center', border: 'none' }}
       >
         <Typography variant="caption" color="text.secondary">
           {`Updated ${formatAge(secondsSinceUpdate)} • Next update in ~3 minutes`}

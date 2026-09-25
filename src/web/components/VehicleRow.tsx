@@ -49,9 +49,13 @@ export const VehicleRow = memo(({ vehicle, onSelect }: VehicleRowProps) => {
           label={STATUS_LABELS[vehicle.status]}
           sx={(theme) => ({
             bgcolor: theme.palette.vehicleStatus[STATUS_PALETTE_KEY[vehicle.status]],
-            color: theme.palette.getContrastText(
-              theme.palette.vehicleStatus[STATUS_PALETTE_KEY[vehicle.status]]
-            ),
+            color:
+              vehicle.status === 'delivered'
+                ? '#03721e'
+                : theme.palette.getContrastText(
+                    theme.palette.vehicleStatus[STATUS_PALETTE_KEY[vehicle.status]]
+                  ),
+            fontWeight: 700,
           })}
         />
       </TableCell>

@@ -219,6 +219,7 @@ export const VehicleDetailModal = () => {
               badge={{
                 label: STATUS_LABELS[vehicle.status],
                 color: theme.palette.vehicleStatus[STATUS_PALETTE_KEY[vehicle.status]],
+                textColor: vehicle.status === 'delivered' ? '#03721e' : undefined,
               }}
             />
             <StatCard

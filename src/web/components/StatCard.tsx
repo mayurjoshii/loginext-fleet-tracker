@@ -11,6 +11,8 @@ export interface StatCardBadge {
   label: string;
   /** Either a fixed hex/token color, or a severity key resolved via the theme palette. */
   color: string;
+  /** Overrides the auto-computed contrast text color when set. */
+  textColor?: string;
 }
 
 export interface StatCardProgress {
@@ -54,7 +56,8 @@ export const StatCard = ({ icon, label, value, badge, progress, fullWidth }: Sta
             label={badge.label}
             sx={(theme) => ({
               bgcolor: badge.color,
-              color: theme.palette.getContrastText(badge.color),
+              color: badge.textColor ?? theme.palette.getContrastText(badge.color),
+              fontWeight: 700,
             })}
           />
         )}

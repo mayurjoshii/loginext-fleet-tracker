@@ -4,7 +4,7 @@
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] `StatCard` is a single reusable, prop-driven presentational component (icon + label + value, optional badge or progress bar) with no context or data-fetching of its own
 - [x] Clicking a table row selects that vehicle and opens `VehicleDetailModal`

@@ -105,7 +105,10 @@ export const VehicleTable = () => {
           <TableHead>
             <TableRow>
               {COLUMNS.map((column) => (
-                <TableCell key={column} sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
+                <TableCell
+                  key={column}
+                  sx={{ fontWeight: 700, whiteSpace: 'nowrap', bgcolor: 'grey.100' }}
+                >
                   {column}
                 </TableCell>
               ))}
