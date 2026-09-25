@@ -1,4 +1,32 @@
-# Getting Started with Create React App
+# Loginext Fleet Tracker
+
+A single-screen React + TypeScript dashboard for monitoring a vehicle fleet in real time. It
+combines REST snapshots with WebSocket push updates to show live vehicle location, status, and
+battery/fuel levels without requiring manual refreshes.
+
+## Features
+
+- Live fleet table with per-vehicle status, speed, location, battery, and fuel level
+- Fleet-wide summary statistics (total vehicles, active/idle/offline counts, average speed)
+- Filter the fleet by status
+- Real-time updates via WebSocket, merged into the table as they arrive, with a live connection
+  status indicator
+- Vehicle detail modal (opened from a table row) showing full vehicle info, with a banner
+  prompting a refresh when newer data has arrived while the modal is open
+
+## Getting Started
+
+1. Install dependencies:
+   ```
+   npm install
+   ```
+2. Copy `.env.example` to `.env` and set `REACT_APP_API_BASE_URL` and `REACT_APP_WS_URL` to point
+   at your fleet API/WebSocket server.
+3. Start the dev server:
+   ```
+   npm start
+   ```
+   Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
@@ -28,19 +56,3 @@ The build is minified and the filenames include the hashes.\
 Your app is ready to be deployed!
 
 See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
