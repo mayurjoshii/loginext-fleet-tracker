@@ -145,9 +145,9 @@ describe('VehicleDetailModal', () => {
 
     expect(mockedVehicleService.getById).toHaveBeenCalledWith('v-1');
     const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).getByText('EN ROUTE')).toBeInTheDocument();
+    expect(within(dialog).getAllByText('EN ROUTE').length).toBeGreaterThan(0);
     expect(within(dialog).getByText('62 mph')).toBeInTheDocument();
-    expect(within(dialog).getByText('John Smith')).toBeInTheDocument();
+    expect(within(dialog).getAllByText('John Smith').length).toBeGreaterThan(0);
     expect(within(dialog).getByText('+15096750557')).toBeInTheDocument();
     expect(within(dialog).getByText('Hotel Downtown')).toBeInTheDocument();
     expect(within(dialog).getByText('37.6779, -122.4754')).toBeInTheDocument();
@@ -165,7 +165,7 @@ describe('VehicleDetailModal', () => {
 
     await userEvent.click(await screen.findByText('FL-002'));
     const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).getByText('DELIVERED')).toBeInTheDocument();
+    expect(within(dialog).getAllByText('DELIVERED').length).toBeGreaterThan(0);
 
     const backdrop = document.querySelector('.MuiBackdrop-root') as HTMLElement;
     await userEvent.click(backdrop);

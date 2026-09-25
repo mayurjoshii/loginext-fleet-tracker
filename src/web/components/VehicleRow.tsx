@@ -51,7 +51,7 @@ export const VehicleRow = memo(({ vehicle, onSelect }: VehicleRowProps) => {
             bgcolor: theme.palette.vehicleStatus[STATUS_PALETTE_KEY[vehicle.status]],
             color:
               vehicle.status === 'delivered'
-                ? '#03721e'
+                ? theme.palette.vehicleStatus.deliveredText
                 : theme.palette.getContrastText(
                     theme.palette.vehicleStatus[STATUS_PALETTE_KEY[vehicle.status]]
                   ),

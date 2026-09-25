@@ -8,11 +8,12 @@ import Modal from '@mui/material/Modal';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { useTheme } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
 import BatteryFullOutlinedIcon from '@mui/icons-material/BatteryFullOutlined';
 import CloseIcon from '@mui/icons-material/Close';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import LocalGasStationOutlinedIcon from '@mui/icons-material/LocalGasStationOutlined';
+import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined';
 import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutlineOutlined';
 import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
@@ -58,6 +59,14 @@ export const VehicleDetailModal = () => {
   const [refreshError, setRefreshError] = useState<string | null>(null);
 
   const open = selectedVehicleId !== null;
+
+  const statusColor = vehicle
+    ? vehicle.status === 'delivered'
+      ? theme.palette.vehicleStatus.deliveredText
+      : vehicle.status === 'idle'
+        ? theme.palette.getContrastText(theme.palette.vehicleStatus.idle)
+        : theme.palette.vehicleStatus[STATUS_PALETTE_KEY[vehicle.status]]
+    : undefined;
 
   /**
    * Whether a socket push has carried newer data for this vehicle than the
@@ -141,7 +150,10 @@ export const VehicleDetailModal = () => {
       onClose={clearSelectedVehicle}
       slotProps={{
         backdrop: {
-          sx: { backdropFilter: 'blur(3px)', bgcolor: 'rgba(0, 0, 0, 0.5)' },
+          sx: {
+            backdropFilter: 'blur(3px)',
+            bgcolor: alpha(theme.palette.common.black, 0.5),
+          },
         },
       }}
       sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}
@@ -159,10 +171,29 @@ export const VehicleDetailModal = () => {
           outline: 'none',
         }}
       >
-        <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
-            {vehicle ? vehicle.vehicleNumber : 'Vehicle details'}
-          </Typography>
+        <Stack direction="row" sx={{ alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>
+          <Stack spacing={0.5}>
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+              <LocalShippingOutlinedIcon fontSize="small" />
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                {vehicle ? vehicle.vehicleNumber : 'Vehicle details'}
+              </Typography>
+            </Stack>
+            {vehicle && (
+              <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
+                <PersonOutlineIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  {vehicle.driverName}
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  &bull;
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  {STATUS_LABELS[vehicle.status]}
+                </Typography>
+              </Stack>
+            )}
+          </Stack>
           <IconButton aria-label="Close" onClick={clearSelectedVehicle} size="small">
             <CloseIcon />
           </IconButton>
@@ -213,11 +244,6 @@ export const VehicleDetailModal = () => {
             }}
           >
             {(() => {
-              const statusColor =
-                vehicle.status === 'delivered'
-                  ? '#03721e'
-                  : theme.palette.vehicleStatus[STATUS_PALETTE_KEY[vehicle.status]];
-
               return (
                 <>
                   <StatCard
@@ -228,7 +254,10 @@ export const VehicleDetailModal = () => {
                     badge={{
                       label: STATUS_LABELS[vehicle.status],
                       color: theme.palette.vehicleStatus[STATUS_PALETTE_KEY[vehicle.status]],
-                      textColor: vehicle.status === 'delivered' ? '#03721e' : undefined,
+                      textColor:
+                        vehicle.status === 'delivered'
+                          ? theme.palette.vehicleStatus.deliveredText
+                          : undefined,
                     }}
                   />
                   <StatCard
