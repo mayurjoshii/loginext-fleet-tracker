@@ -1,4 +1,9 @@
-import { deriveStatistics, mergeVehiclesById, parseFleetMessage } from './mergeVehicles';
+import {
+  deriveStatistics,
+  mergeVehiclesById,
+  parseFleetMessage,
+  selectSnapshotFor,
+} from './mergeVehicles';
 import type { Vehicle } from '../types/vehicle';
 
 function vehicle(overrides: Partial<Vehicle> & Pick<Vehicle, 'id'>): Vehicle {
@@ -122,5 +127,23 @@ describe('parseFleetMessage', () => {
     expect(parseFleetMessage('ping')).toBeNull();
     expect(parseFleetMessage({ type: 'heartbeat', data: [] })).toBeNull();
     expect(parseFleetMessage({ type: 'vehicle_update', data: 'nope' })).toBeNull();
+  });
+});
+
+describe('selectSnapshotFor', () => {
+  const fleet = [
+    vehicle({ id: 'a', status: 'idle' }),
+    vehicle({ id: 'b', status: 'en_route' }),
+    vehicle({ id: 'c', status: 'idle' }),
+  ];
+
+  it('returns the whole fleet untouched for the "all" filter', () => {
+    expect(selectSnapshotFor(fleet, 'all')).toBe(fleet);
+  });
+
+  it('scopes the snapshot to the active status', () => {
+    expect(selectSnapshotFor(fleet, 'idle').map((v) => v.id)).toEqual(['a', 'c']);
+    expect(selectSnapshotFor(fleet, 'en_route').map((v) => v.id)).toEqual(['b']);
+    expect(selectSnapshotFor(fleet, 'delivered')).toEqual([]);
   });
 });
