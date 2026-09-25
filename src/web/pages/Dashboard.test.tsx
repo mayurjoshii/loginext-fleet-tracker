@@ -18,6 +18,8 @@ function renderMain() {
 
 jest.mock('../../api/services/vehicleService');
 jest.mock('../../api/services/statisticsService');
+// Keeps these tests off a real WebSocket; live-push behaviour is covered in LiveUpdates.test.tsx.
+jest.mock('../../sockets/SocketManager');
 
 const mockedVehicleService = vehicleService as jest.Mocked<typeof vehicleService>;
 const mockedStatisticsService = statisticsService as jest.Mocked<typeof statisticsService>;
