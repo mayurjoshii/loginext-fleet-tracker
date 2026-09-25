@@ -1,4 +1,4 @@
-import { createTheme } from "@mui/material/styles";
+import { alpha, createTheme } from "@mui/material/styles";
 
 declare module "@mui/material/styles" {
   interface Palette {
@@ -6,6 +6,8 @@ declare module "@mui/material/styles" {
       enRoute: string;
       idle: string;
       delivered: string;
+      /** Contrast text for the "delivered" badge — darker than the auto-computed contrast text. */
+      deliveredText: string;
     };
   }
   interface PaletteOptions {
@@ -13,6 +15,7 @@ declare module "@mui/material/styles" {
       enRoute: string;
       idle: string;
       delivered: string;
+      deliveredText: string;
     };
   }
 }
@@ -29,6 +32,7 @@ export const theme = createTheme({
       enRoute: "#1565c0",
       idle: "#e8e8e8",
       delivered: "#d0ffd3",
+      deliveredText: "#03721e",
     },
   },
   shape: {
