@@ -1,4 +1,4 @@
-import Alert from '@mui/material/Alert';
+import Alert, { type AlertColor } from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -12,13 +12,8 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { useFleet } from '../../context/FleetContext';
-import {
-  formatCoordinates,
-  formatDateTime,
-  formatOptionalDateTime,
-  formatSpeed,
-} from '../../utils/format';
-import type { VehicleStatus } from '../../types/vehicle';
+import { liveStateFor } from './LiveStatusIndicator';
+import { VehicleRow } from './VehicleRow';
 
 const COLUMNS = [
   'Vehicle',
@@ -31,24 +26,45 @@ const COLUMNS = [
   'Location',
 ];
 
-const STATUS_LABELS: Record<VehicleStatus, string> = {
-  en_route: 'EN ROUTE',
-  idle: 'IDLE',
-  delivered: 'DELIVERED',
-};
+interface FailureNotice {
+  severity: AlertColor;
+  text: string;
+}
 
-const STATUS_PALETTE_KEY: Record<VehicleStatus, 'enRoute' | 'idle' | 'delivered'> = {
-  en_route: 'enRoute',
-  idle: 'idle',
-  delivered: 'delivered',
-};
+/**
+ * The banner to show above the table, or `null` when there's nothing wrong.
+ *
+ * Written as statements rather than a conditional inside the JSX: the "no
+ * error" case has to be unmistakably separate from the two error cases, so
+ * that an empty banner can't render on a healthy load.
+ */
+function failureNotice(error: string | null, usingFallbackSnapshot: boolean): FailureNotice | null {
+  if (!error) {
+    return null;
+  }
+  if (usingFallbackSnapshot) {
+    // Rows are showing, but they came off the socket rather than a confirmed
+    // REST snapshot — say so rather than letting them pass for a normal load.
+    return {
+      severity: 'warning',
+      text: `Showing the last live snapshot — couldn't reach the server. ${error}`,
+    };
+  }
+  return { severity: 'error', text: error };
+}
 
 /**
  * The fleet table: a fixed title row and column headers, with the body
  * scrolling independently underneath.
  */
 export const VehicleTable = () => {
-  const { vehicles, loading, error, selectVehicle } = useFleet();
+  const { vehicles, loading, error, selectVehicle, connectionStatus, usingFallbackSnapshot } =
+    useFleet();
+  // Same mapping the left-rail indicator uses, so the badge here can never
+  // claim the feed is live while the rail says otherwise.
+  const live = liveStateFor(connectionStatus);
+  const LiveIcon = live.icon;
+  const notice = failureNotice(error, usingFallbackSnapshot);
 
   return (
     <Paper
@@ -68,11 +84,19 @@ export const VehicleTable = () => {
         <Typography variant="h6" sx={{ fontWeight: 700 }}>
           {`Vehicles (${vehicles.length})`}
         </Typography>
+        <Chip
+          size="small"
+          color={live.color}
+          variant="filled"
+          icon={<LiveIcon />}
+          label={live.badge}
+          sx={{ fontWeight: 700 }}
+        />
       </Stack>
 
-      {error && (
-        <Alert severity="error" sx={{ mx: 2, mb: 1 }}>
-          {error}
+      {notice && (
+        <Alert severity={notice.severity} sx={{ mx: 2, mb: 1 }}>
+          {notice.text}
         </Alert>
       )}
 
@@ -89,40 +113,7 @@ export const VehicleTable = () => {
           </TableHead>
           <TableBody>
             {vehicles.map((vehicle) => (
-              <TableRow
-                key={vehicle.id}
-                hover
-                onClick={() => selectVehicle(vehicle.id)}
-                sx={{ cursor: 'pointer' }}
-              >
-                <TableCell sx={{ color: 'primary.main', fontWeight: 600 }}>
-                  {vehicle.vehicleNumber}
-                </TableCell>
-                <TableCell>{vehicle.driverName}</TableCell>
-                <TableCell>
-                  <Chip
-                    size="small"
-                    label={STATUS_LABELS[vehicle.status]}
-                    sx={(theme) => ({
-                      bgcolor: theme.palette.vehicleStatus[STATUS_PALETTE_KEY[vehicle.status]],
-                      color: theme.palette.getContrastText(
-                        theme.palette.vehicleStatus[STATUS_PALETTE_KEY[vehicle.status]]
-                      ),
-                    })}
-                  />
-                </TableCell>
-                <TableCell sx={{ whiteSpace: 'nowrap' }}>{formatSpeed(vehicle.speed)}</TableCell>
-                <TableCell>{vehicle.destination}</TableCell>
-                <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                  {formatOptionalDateTime(vehicle.estimatedArrival)}
-                </TableCell>
-                <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                  {formatDateTime(vehicle.lastUpdated)}
-                </TableCell>
-                <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                  {formatCoordinates(vehicle.currentLocation.lat, vehicle.currentLocation.lng)}
-                </TableCell>
-              </TableRow>
+              <VehicleRow key={vehicle.id} vehicle={vehicle} onSelect={selectVehicle} />
             ))}
           </TableBody>
         </Table>

@@ -95,6 +95,13 @@ function chipNames(): string[] {
 beforeEach(() => {
   jest.clearAllMocks();
   mockedVehicleService.list.mockResolvedValue(VEHICLES);
+  mockedVehicleService.getById.mockImplementation(async (id) => {
+    const match = VEHICLES.find((candidate) => candidate.id === id);
+    if (!match) {
+      throw new Error(`No vehicle ${id}`);
+    }
+    return match;
+  });
   mockedStatisticsService.get.mockResolvedValue(STATISTICS);
 });
 
@@ -181,5 +188,168 @@ describe('Live WebSocket updates', () => {
     emitConnectionStatus('closed');
     expect(screen.getByRole('status')).toHaveTextContent('Offline — data may be stale');
     expect(screen.getByText('Offline')).toBeInTheDocument();
+  });
+});
+
+describe('REST failure fallback to the retained socket snapshot', () => {
+  it('still shows nothing when REST fails before any snapshot has arrived', async () => {
+    mockedVehicleService.list.mockRejectedValue(new Error('Vehicle service unavailable'));
+
+    renderMain();
+    expect(await screen.findByText('Vehicle service unavailable')).toBeInTheDocument();
+    expect(screen.getByText('Vehicles (0)')).toBeInTheDocument();
+
+    // initial_data arrives, but is retained only — it never paints on its own.
+    emitMessage({
+      type: 'initial_data',
+      data: VEHICLES,
+      timestamp: '2026-09-24T10:00:00.000Z',
+    });
+    expect(screen.getByText('Vehicles (0)')).toBeInTheDocument();
+  });
+
+  it('falls back to the retained snapshot on a failed refetch, flagged as unconfirmed', async () => {
+    renderMain();
+    await screen.findByText('Vehicles (2)');
+
+    // A push gives the context a whole-fleet snapshot to retain.
+    pushVehicleUpdate(VEHICLES);
+
+    // The next REST call — triggered by a filter change — fails.
+    mockedVehicleService.listByStatus.mockRejectedValue(new Error('Gateway timeout'));
+    await userEvent.click(screen.getByRole('button', { name: 'Delivered (1)' }));
+
+    // Rather than an empty table, the snapshot shows, scoped to that filter.
+    expect(await screen.findByText('Vehicles (1)')).toBeInTheDocument();
+    expect(screen.getByText('FL-002')).toBeInTheDocument();
+    expect(screen.queryByText('FL-001')).not.toBeInTheDocument();
+    expect(screen.getByText(/Showing the last live snapshot/)).toBeInTheDocument();
+  });
+
+  it('drops the fallback notice once REST succeeds again', async () => {
+    renderMain();
+    await screen.findByText('Vehicles (2)');
+    pushVehicleUpdate(VEHICLES);
+
+    mockedVehicleService.listByStatus.mockRejectedValue(new Error('Gateway timeout'));
+    await userEvent.click(screen.getByRole('button', { name: 'Delivered (1)' }));
+    await screen.findByText(/Showing the last live snapshot/);
+
+    await userEvent.click(screen.getByRole('button', { name: 'All (2)' }));
+
+    expect(await screen.findByText('Vehicles (2)')).toBeInTheDocument();
+    expect(screen.queryByText(/Showing the last live snapshot/)).not.toBeInTheDocument();
+  });
+
+  it('derives statistics from the retained snapshot when /statistics fails', async () => {
+    mockedStatisticsService.get.mockRejectedValue(new Error('Statistics unavailable'));
+
+    renderMain();
+    await screen.findByText('Vehicles (2)');
+    pushVehicleUpdate([
+      { ...VEHICLES[0], speed: 80, status: 'idle' },
+      { ...VEHICLES[1], speed: 0 },
+    ]);
+
+    expect(chipNames()).toEqual(['All (2)', 'Idle (1)', 'En Route (0)', 'Delivered (1)']);
+    expect(
+      within(screen.getByRole('group', { name: 'Avg Speed' })).getByText('40')
+    ).toBeInTheDocument();
+  });
+});
+
+describe('Failure banner', () => {
+  it('renders no banner at all on a healthy load', async () => {
+    renderMain();
+    await screen.findByText('Vehicles (2)');
+
+    // Guards the precedence trap: an `error && cond ? a : b` here would render
+    // an empty error alert on every successful load.
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('renders a single error banner when REST fails with no snapshot to fall back on', async () => {
+    mockedVehicleService.list.mockRejectedValue(new Error('Vehicle service unavailable'));
+
+    renderMain();
+    await screen.findByText('Vehicle service unavailable');
+
+    const alerts = screen.getAllByRole('alert');
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]).toHaveTextContent('Vehicle service unavailable');
+    expect(alerts[0]).not.toHaveTextContent(/Showing the last live snapshot/);
+  });
+});
+
+describe('Open modal staleness signal', () => {
+  const NEWER = {
+    ...VEHICLES[0],
+    speed: 15,
+    batteryLevel: 31,
+    lastUpdated: '2026-09-24T10:00:00.000Z',
+  };
+
+  async function openModal() {
+    renderMain();
+    await screen.findByText('Vehicles (2)');
+    await userEvent.click(screen.getByText('FL-001'));
+    return screen.findByRole('dialog');
+  }
+
+  it('flags newer data without changing the values on screen', async () => {
+    const dialog = await openModal();
+    expect(within(dialog).getByText('62 mph')).toBeInTheDocument();
+
+    pushVehicleUpdate([NEWER, VEHICLES[1]]);
+
+    // Signalled, not swapped — the dispatcher's reading position is preserved.
+    expect(within(dialog).getByText('Newer data has arrived for this vehicle.')).toBeInTheDocument();
+    expect(within(dialog).getByText('62 mph')).toBeInTheDocument();
+    expect(within(dialog).getByText('59%')).toBeInTheDocument();
+  });
+
+  it('pulls the new values through getById when Refresh is clicked', async () => {
+    const dialog = await openModal();
+    pushVehicleUpdate([NEWER, VEHICLES[1]]);
+
+    mockedVehicleService.getById.mockResolvedValueOnce(NEWER);
+    await userEvent.click(within(dialog).getByRole('button', { name: /Refresh/ }));
+
+    expect(await within(dialog).findByText('15 mph')).toBeInTheDocument();
+    expect(within(dialog).getByText('31%')).toBeInTheDocument();
+    // REST remains the source of truth for single-vehicle detail.
+    expect(mockedVehicleService.getById).toHaveBeenCalledTimes(2);
+    expect(mockedVehicleService.getById).toHaveBeenLastCalledWith('v-1');
+
+    expect(
+      within(dialog).queryByText('Newer data has arrived for this vehicle.')
+    ).not.toBeInTheDocument();
+  });
+
+  it('stays quiet when a push carries no newer data for this vehicle', async () => {
+    const dialog = await openModal();
+
+    // FL-002 moves; FL-001 is unchanged.
+    pushVehicleUpdate([
+      VEHICLES[0],
+      { ...VEHICLES[1], speed: 9, lastUpdated: '2026-09-24T10:00:00.000Z' },
+    ]);
+
+    expect(
+      within(dialog).queryByText('Newer data has arrived for this vehicle.')
+    ).not.toBeInTheDocument();
+  });
+
+  it('keeps the existing data visible when a refresh fails', async () => {
+    const dialog = await openModal();
+    pushVehicleUpdate([NEWER, VEHICLES[1]]);
+
+    mockedVehicleService.getById.mockRejectedValueOnce(new Error('Gateway timeout'));
+    await userEvent.click(within(dialog).getByRole('button', { name: /Refresh/ }));
+
+    expect(await within(dialog).findByText(/Couldn't refresh: Gateway timeout/)).toBeInTheDocument();
+    // The stale-but-real values are still there, and still flagged as stale.
+    expect(within(dialog).getByText('62 mph')).toBeInTheDocument();
+    expect(within(dialog).getByText('Newer data has arrived for this vehicle.')).toBeInTheDocument();
   });
 });
