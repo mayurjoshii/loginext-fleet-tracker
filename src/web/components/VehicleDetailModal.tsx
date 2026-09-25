@@ -212,57 +212,87 @@ export const VehicleDetailModal = () => {
               gap: 2,
             }}
           >
-            <StatCard
-              icon={<PlaceOutlinedIcon />}
-              label="Status"
-              value=""
-              badge={{
-                label: STATUS_LABELS[vehicle.status],
-                color: theme.palette.vehicleStatus[STATUS_PALETTE_KEY[vehicle.status]],
-                textColor: vehicle.status === 'delivered' ? '#03721e' : undefined,
-              }}
-            />
-            <StatCard
-              icon={<SpeedOutlinedIcon />}
-              label="Current Speed"
-              value={formatSpeed(vehicle.speed)}
-            />
-            <StatCard icon={<PersonOutlineIcon />} label="Driver" value={vehicle.driverName} />
-            <StatCard
-              icon={<PhoneOutlinedIcon />}
-              label="Driver Phone"
-              value={vehicle.driverPhone}
-            />
-            <StatCard
-              icon={<LocationOnOutlinedIcon />}
-              label="Destination"
-              value={vehicle.destination}
-            />
-            <StatCard
-              icon={<PlaceOutlinedIcon />}
-              label="Location"
-              value={formatCoordinates(vehicle.currentLocation.lat, vehicle.currentLocation.lng)}
-            />
-            <StatCard
-              icon={<BatteryFullOutlinedIcon />}
-              label="Battery Level"
-              value={`${vehicle.batteryLevel}%`}
-              progress={{
-                value: vehicle.batteryLevel,
-                color: severityForLevel(vehicle.batteryLevel),
-              }}
-            />
-            <StatCard
-              icon={<LocalGasStationOutlinedIcon />}
-              label="Fuel Level"
-              value={`${vehicle.fuelLevel}%`}
-              progress={{ value: vehicle.fuelLevel, color: severityForLevel(vehicle.fuelLevel) }}
-            />
-            <StatCard
-              icon={<UpdateOutlinedIcon />}
-              label="Last Updated"
-              value={formatDateTime(vehicle.lastUpdated)}
-            />
+            {(() => {
+              const statusColor =
+                vehicle.status === 'delivered'
+                  ? '#03721e'
+                  : theme.palette.vehicleStatus[STATUS_PALETTE_KEY[vehicle.status]];
+
+              return (
+                <>
+                  <StatCard
+                    icon={<PlaceOutlinedIcon />}
+                    label="Status"
+                    value=""
+                    borderColor={statusColor}
+                    badge={{
+                      label: STATUS_LABELS[vehicle.status],
+                      color: theme.palette.vehicleStatus[STATUS_PALETTE_KEY[vehicle.status]],
+                      textColor: vehicle.status === 'delivered' ? '#03721e' : undefined,
+                    }}
+                  />
+                  <StatCard
+                    icon={<SpeedOutlinedIcon />}
+                    label="Current Speed"
+                    value={formatSpeed(vehicle.speed)}
+                    borderColor={statusColor}
+                  />
+                  <StatCard
+                    icon={<PersonOutlineIcon />}
+                    label="Driver"
+                    value={vehicle.driverName}
+                    borderColor={statusColor}
+                  />
+                  <StatCard
+                    icon={<PhoneOutlinedIcon />}
+                    label="Driver Phone"
+                    value={vehicle.driverPhone}
+                    borderColor={statusColor}
+                  />
+                  <StatCard
+                    icon={<LocationOnOutlinedIcon />}
+                    label="Destination"
+                    value={vehicle.destination}
+                    borderColor={statusColor}
+                  />
+                  <StatCard
+                    icon={<PlaceOutlinedIcon />}
+                    label="Location"
+                    value={formatCoordinates(
+                      vehicle.currentLocation.lat,
+                      vehicle.currentLocation.lng
+                    )}
+                    borderColor={statusColor}
+                  />
+                  <StatCard
+                    icon={<BatteryFullOutlinedIcon />}
+                    label="Battery Level"
+                    value={`${vehicle.batteryLevel}%`}
+                    progress={{
+                      value: vehicle.batteryLevel,
+                      color: severityForLevel(vehicle.batteryLevel),
+                    }}
+                    borderColor={statusColor}
+                  />
+                  <StatCard
+                    icon={<LocalGasStationOutlinedIcon />}
+                    label="Fuel Level"
+                    value={`${vehicle.fuelLevel}%`}
+                    progress={{
+                      value: vehicle.fuelLevel,
+                      color: severityForLevel(vehicle.fuelLevel),
+                    }}
+                    borderColor={statusColor}
+                  />
+                  <StatCard
+                    icon={<UpdateOutlinedIcon />}
+                    label="Last Updated"
+                    value={formatDateTime(vehicle.lastUpdated)}
+                    borderColor={statusColor}
+                  />
+                </>
+              );
+            })()}
           </Box>
         )}
       </Paper>

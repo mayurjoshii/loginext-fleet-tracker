@@ -1,7 +1,7 @@
-import { env } from '../config/env';
+import { env } from "../config/env";
 
 type MessageHandler = (data: unknown) => void;
-type ConnectionStatus = 'connecting' | 'open' | 'closed' | 'error';
+type ConnectionStatus = "connecting" | "open" | "closed" | "error";
 type StatusHandler = (status: ConnectionStatus) => void;
 
 const RECONNECT_BASE_DELAY_MS = 1000;
@@ -71,13 +71,14 @@ class SocketManager {
     if (!this.url) {
       return;
     }
-    this.emitStatus('connecting');
+    this.emitStatus("connecting");
     this.socket = new WebSocket(this.url);
 
     this.socket.onopen = () => {
       this.reconnectAttempts = 0;
       this.armStaleTimer();
-      this.emitStatus('open');
+      console.error("[SocketManager] socket connected");
+      this.emitStatus("open");
     };
 
     this.socket.onmessage = (event: MessageEvent) => {
@@ -93,12 +94,13 @@ class SocketManager {
     };
 
     this.socket.onerror = () => {
-      this.emitStatus('error');
+      this.emitStatus("error");
     };
 
     this.socket.onclose = () => {
       this.clearStaleTimer();
-      this.emitStatus('closed');
+      console.error("[SocketManager] socket disconnected");
+      this.emitStatus("closed");
       if (this.shouldReconnect) {
         this.scheduleReconnect();
       }
@@ -140,7 +142,8 @@ class SocketManager {
       stale.close();
     }
 
-    this.emitStatus('closed');
+    console.error("[SocketManager] socket disconnected (stale)");
+    this.emitStatus("closed");
     if (this.shouldReconnect) {
       this.scheduleReconnect();
     }
@@ -149,7 +152,7 @@ class SocketManager {
   private scheduleReconnect(): void {
     const delay = Math.min(
       RECONNECT_BASE_DELAY_MS * 2 ** this.reconnectAttempts,
-      RECONNECT_MAX_DELAY_MS
+      RECONNECT_MAX_DELAY_MS,
     );
     this.reconnectAttempts += 1;
     this.reconnectTimer = setTimeout(() => this.openSocket(), delay);
@@ -162,3 +165,6 @@ class SocketManager {
 
 export const socketManager = new SocketManager();
 export type { ConnectionStatus };
+
+// Intentional. Only for debugging in devtools console; For the given case study
+(window as any).socketManager = socketManager;
