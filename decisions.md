@@ -66,3 +66,26 @@ from `plan.md` intact even though the current payload happens to be a full snaps
 this assumption is already safe under the merge-by-id implementation — no code change needed,
 just remove this note's uncertainty. If the backend team confirms the contract either way,
 update this decision accordingly.
+
+## 2026-09-25 — Open detail modal signals staleness instead of live-updating
+
+While `VehicleDetailModal` is open, an incoming `vehicle_update` does **not** change the values it
+shows. Instead the modal compares the pushed `lastUpdated` for that vehicle against the snapshot on
+screen and, when the push is newer, renders a "Newer data has arrived for this vehicle" banner with
+a Refresh button that refetches via the same `vehicleService.getById` the modal opened with.
+
+**Context:** The modal held its own copy of the vehicle, fetched once on open, and nothing ever
+updated it — so speed, location, battery, fuel and its own "Last Updated" card silently froze while
+the table behind it moved on. The obvious fix was to merge pushes straight into the modal, but that
+would make the socket a second source of truth for single-vehicle detail, which `spec.md` assigns
+to REST. It would also mutate values under a dispatcher mid-read — the same reason the REST-failure
+fallback deliberately never swaps content either.
+
+**Decision:** The socket is a *signal* here, not a data source: it tells the modal that something
+newer exists, and REST supplies the value when the dispatcher asks for it. Refreshing keeps the
+existing values visible while in flight, and a failed refresh leaves them in place rather than
+blanking the panel.
+
+**Follow-up:** If dispatchers report missing updates because they don't notice the banner, consider
+auto-refreshing the modal when its data is untouched (no scroll, no focus), or making the banner
+more prominent — but keep the REST-supplies-the-value boundary either way.

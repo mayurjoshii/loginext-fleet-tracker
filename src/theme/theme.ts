@@ -34,4 +34,24 @@ export const theme = createTheme({
   shape: {
     borderRadius: 8,
   },
+  components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        "*::-webkit-scrollbar": {
+          width: 4,
+          height: 4,
+        },
+        "*::-webkit-scrollbar-track": {
+          background: "transparent",
+        },
+        "*::-webkit-scrollbar-thumb": {
+          backgroundColor: "#d5d5d5",
+          borderRadius: 8,
+        },
+        "*::-webkit-scrollbar-thumb:hover": {
+          backgroundColor: "#bdbdbd",
+        },
+      },
+    },
+  },
 });
