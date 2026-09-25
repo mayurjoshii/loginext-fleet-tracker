@@ -28,7 +28,7 @@ export const theme = createTheme({
     vehicleStatus: {
       enRoute: "#1565c0",
       idle: "#e8e8e8",
-      delivered: "#a3ffa8",
+      delivered: "#d0ffd3",
     },
   },
   shape: {
